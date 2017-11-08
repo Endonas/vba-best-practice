@@ -1,0 +1,73 @@
+Sub SaveNewVersion()
+    Dim fileName As String, index As Long, ext As String, folder As String
+    folder = ActiveWorkbook.Path
+    arr = Split(ActiveWorkbook.Name, ".")
+    ext = arr(UBound(arr))
+    If InStr(ActiveWorkbook.Name, "_v") = 0 Then
+        fileName = ActiveWorkbook.Path & "\" & Left(ActiveWorkbook.Name, InStr(ActiveWorkbook.Name, ".") - 1) & " Prepared_v1." & ext
+    Else
+        index = CInt(Split(Right(ActiveWorkbook.Name, Len(ActiveWorkbook.Name) - InStr(ActiveWorkbook.Name, "_v") - 1), ".")(0))
+        index = index + 1
+        fileName = ActiveWorkbook.Path & "\" & Left(ActiveWorkbook.Name, InStr(ActiveWorkbook.Name, "_v") - 1) & "_v" & index & "." & ext
+    End If
+    ActiveWorkbook.SaveAs fileName ', , , WriteResPassword:="1234"
+End Sub
+
+Sub SaveNewVersionPreparer()
+    Dim fileName As String, index As Long, ext As String, folder As String
+    folder = ActiveWorkbook.Path
+    arr = Split(ActiveWorkbook.Name, ".")
+    ext = arr(UBound(arr))
+    If InStr(ActiveWorkbook.Name, "_v") = 0 Then
+        fileName = ActiveWorkbook.Path & "\" & Left(ActiveWorkbook.Name, InStr(ActiveWorkbook.Name, ".") - 1) & "_v1." & ext
+    Else
+        index = CInt(Split(Right(ActiveWorkbook.Name, Len(ActiveWorkbook.Name) - InStr(ActiveWorkbook.Name, "_v") - 1), ".")(0))
+        fileName = ActiveWorkbook.Path & "\" & Left(ActiveWorkbook.Name, InStr(ActiveWorkbook.Name, "_v") - 10) & "_v" & index & " REVIEWED." & ext
+    End If
+    ActiveWorkbook.SaveAs fileName ', , , WriteResPassword:="1234"
+End Sub
+
+' lock populated cells in the cover sheet
+Sub ProtectTheSheet()
+    Dim chCell As Range
+    Dim chRng As Range
+    Sheets("Cover").Activate
+'    Set chRng = ActiveSheet.Range("A1:P50")
+    'Clear the default status
+    ActiveSheet.Unprotect
+    Cells.Locked = False
+    'Check cell value in body and lock cells with content
+'            For Each chCell In chRng.Cells
+'                If chCell.Value <> "" Then
+'                    chCell.Locked = True
+'                End If
+'                Next chCell
+    Range("A6", "B8").Locked = True
+    Range("A2").Locked = True
+    Range("A16", "H26").Locked = True
+    ActiveSheet.Protect
+End Sub
+
+
+' lock all sheets
+Sub ProtectTheSheets()
+    Dim chCell As Range
+    Dim chRng As Range
+    Sheets("Cover").Activate
+    'Clear the default status
+    ActiveSheet.Unprotect
+    Range("A1:Y60").Locked = False
+    Set chRng = ActiveSheet.Range("A1:Y80")
+    'Check cell value in body and lock cells with content
+    For Each chCell In chRng.Cells
+        If chCell.Value <> "" Then Cells.Locked = True
+    Next chCell
+    ActiveSheet.Protect
+    'lock all the sheets
+    For Each ws In ThisWorkbook.Sheets
+        If ws Is Sheets("Cover") Then
+        End If
+        ws.Activate
+        ActiveSheet.Protect
+    Next ws
+End Sub
