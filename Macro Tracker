@@ -1,0 +1,132 @@
+Option Explicit
+Dim sOldAddress As String
+Dim vOldValue As Variant
+Dim sOldFormula As String
+Dim i As Integer
+
+Private Sub Workbook_TrackChange(Cancel As Boolean)
+ 
+If Sheets("Cover").Range("A1").Value <> "True" Then
+    Exit Sub
+End If
+
+Dim sh As Worksheet
+For Each sh In ActiveWorkbook.Worksheets
+sh.PageSetup.LeftFooter = "&06" & ActiveWorkbook.FullName & vbLf & "&A"
+Next sh
+End Sub
+Private Sub Workbook_SheetChange(ByVal sh As Object, ByVal Target As Range)
+
+If Sheets("Cover").Range("A1").Value <> "True" Then
+    Exit Sub
+End If
+
+Dim wSheet As Worksheet
+Dim wActSheet As Worksheet
+Dim iCol As Integer
+Set wActSheet = ActiveSheet
+
+'Precursor Exits
+'Other conditions that you do not want to tracke could be added here
+If vOldValue = "" Then Exit Sub 'If you comment out this line *every* entry will be recorded
+
+If InStr(vOldValue, Environ("username")) > 0 Then Exit Sub 'If you comment out this line history log entry will be recorded
+If InStr(Target.Value, Environ("username")) > 0 Then Exit Sub
+'Continue
+
+On Error Resume Next ' This Error-Resume-Next is only to allow the creation of the tracker sheet.
+Set wSheet = Sheets("Tracker")
+'**** Add the tracker Sheet if it does not exist ****
+
+If wSheet Is Nothing Then
+Set wActSheet = ActiveSheet
+Worksheets.Add(After:=Worksheets(Worksheets.Count)).Name = "Tracker"
+End If
+On Error GoTo 0
+'**** End of specific error resume next
+ 
+On Error GoTo ErrorHandler
+With Application
+.ScreenUpdating = False
+.EnableEvents = False
+End With
+ 
+With Sheets("Tracker")
+'******** This bit of code moves the tracker over a column when the first columns are full**'
+If .Cells(1, 1) = "" Then '
+iCol = 1 '
+Else '
+iCol = .Cells(1, 256).End(xlToLeft).Column - 7 '
+If Not .Cells(65536, iCol) = "" Then '
+iCol = .Cells(1, 256).End(xlToLeft).Column + 1 '
+End If '
+End If '
+'********* END *****************************************************************************'
+.Unprotect
+ 
+'******** Sets the Column Headers **********************************************************
+If LenB(.Cells(1, iCol).Value) = 0 Then
+.Range(.Cells(1, iCol), .Cells(1, iCol + 7)) = Array("Cell Changed", "Old Value", _
+"New Value", "Old Formula", "New Formula", "Time of Change", "Date of Change", "User")
+.Cells.Columns.AutoFit
+End If
+With .Cells(.Rows.Count, iCol).End(xlUp).Offset(1)
+ 
+.Value = sOldAddress
+.Offset(0, 1).Value = vOldValue
+.Offset(0, 3).Value = sOldFormula
+ 
+If Target.Count = 1 Then
+.Offset(0, 2).Value = Target.Value
+If Target.HasFormula Then .Offset(0, 4).Value = "'" & Target.Formula
+End If
+ 
+.Offset(0, 5) = Time
+.Offset(0, 6) = Date
+.Offset(0, 7) = Application.UserName
+.Offset(0, 7).Borders(xlEdgeRight).LineStyle = xlContinuous
+End With
+ 
+.Protect 'Password:="Secret" 'Uncomment to protect the "tracker tab"
+ 
+End With
+ErrorExit:
+With Application
+.ScreenUpdating = True
+.EnableEvents = True
+End With
+ 
+wActSheet.Activate
+Exit Sub
+ 
+ErrorHandler:
+'any error handling you want
+'Debug.Print "We have an error"
+Resume ErrorExit
+ 
+End Sub
+ 
+Private Sub Workbook_SheetSelectionChange(ByVal sh As Object, ByVal Target As Range)
+
+If Sheets("Cover").Range("A1").Value <> "True" Then
+    Exit Sub
+End If
+
+With Target
+sOldAddress = .Address(external:=True)
+ 
+If .Count > 1 Then
+ 
+vOldValue = "Multiple Cell Select"
+sOldFormula = vbNullString
+ 
+Else
+vOldValue = .Value
+If .HasFormula Then
+sOldFormula = "'" & Target.Formula
+Else
+sOldFormula = vbNullString
+End If
+End If
+End With
+End Sub
